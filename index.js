@@ -6,22 +6,15 @@ MongoClient.connect(
     var collection = connection.collection("customers");
 
     var doFind = function (callback) {
-      collection
-        .find(
-          {
-            n: /^#1/,
-          },
-          {
-            sort: [
-              ["v", "asc"],
-              ["n", "desc"],
-            ],
-          }
-        )
-        .toArray(function (err, documents) {
-          console.log(documents);
-          callback();
-        });
+      var stream = collection.find({}, { sort: "_id" }).stream();
+      // stream object which emits data and end events, among others.
+      stream.on("data", function (document) {
+        console.dir(document);
+      });
+
+      stream.on("end", function () {
+        callback();
+      });
     };
 
     var doInsert = function (i) {
@@ -39,9 +32,10 @@ MongoClient.connect(
       }
     };
     var doUpdate = function () {
+      // updates properties and
       collection.update(
-        { n: "#20" },
-        { $set: { n: "20", v: 1 } },
+        { n: /^#/ },
+        { $mul: { v: 2 } },
         { multi: true },
         function (err, count) {
           console.log();
